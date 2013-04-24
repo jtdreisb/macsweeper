@@ -8,6 +8,8 @@
 
 #import "MineController.h"
 
+#define kUserDatabaseFilePath [NSHomeDirectory() stringByAppendingPathComponent:@"HFE_Players.plist"]
+
 static NSImage *initImage(NSString *name)
 {
 	// Grab the image from the iChat bundle. This would be easy if iChat didn't constantly change where the images were.
@@ -75,7 +77,8 @@ static NSImage *initImage(NSString *name)
     
     [self setDefaults];
     [self setToolbar];
-    
+
+    [self performSelector:@selector(newGame:) withObject:nil afterDelay:0.1];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)myApp
@@ -211,6 +214,30 @@ static NSImage *initImage(NSString *name)
     
     [NSApp endSheet:passcodePanel];
     [passcodePanel orderOut:self];
+}
+
+- (IBAction)playGame:(id)sender
+{
+    NSMutableDictionary *playerDatabase = [[NSMutableDictionary alloc] initWithContentsOfFile:kUserDatabaseFilePath];
+    if (playerDatabase == nil)
+        playerDatabase = [NSMutableDictionary dictionary];
+    
+    NSFormCell *nameCell = [signUpForm cellAtIndex:0];
+    NSFormCell *ageCell = [signUpForm cellAtIndex:1];
+    NSLog(@"%d", [self.passcode intValue]);
+    
+    
+    NSDictionary *playerDictionary = @{
+                                       @"name": [nameCell stringValue],
+                                       @"age": [ageCell stringValue],
+                                       @"passcode": self.passcode,
+                                       @"hadImage": @([self.passcode intValue] % 2),
+                                       @"startTime": [NSDate date]
+                                       };
+    [playerDatabase setObject:playerDictionary forKey:playerDictionary[@"name"]];
+    [playerDatabase writeToFile:kUserDatabaseFilePath atomically:YES];
+    
+    [NSApp stopModal];
 }
 
 - (IBAction)newCustomGame:(id)sender
