@@ -39,7 +39,7 @@ static NSImage *initImage(NSString *name)
 }
 
 @implementation MineController
-
+@synthesize passcode;
 @synthesize questions;
 @synthesize customRows;
 @synthesize customColumns;
@@ -76,7 +76,6 @@ static NSImage *initImage(NSString *name)
     [self setDefaults];
     [self setToolbar];
     
-    [self newGame:nil];
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)myApp
@@ -86,6 +85,7 @@ static NSImage *initImage(NSString *name)
 
 - (IBAction)newGame:(id)sender
 {
+    
     [smileyView setImage:[NSImage imageNamed:@"smile"]];   
     int menuState[4] = {NSOffState, NSOffState, NSOffState, NSOffState};
     menuState[currentGameType] = NSOnState;
@@ -121,8 +121,20 @@ static NSImage *initImage(NSString *name)
             break;
     }
     
+    [NSApp beginSheet:signUpSheet
+       modalForWindow:mainWindow
+        modalDelegate:nil
+       didEndSelector:nil
+          contextInfo:nil];
+    
+    [NSApp runModalForWindow:signUpSheet];
+    
+    [NSApp endSheet:signUpSheet];
+    [signUpSheet orderOut:self];
+    
     [mineView setTimerField:timerField andMinesLeftField:minesLeftField];
-    [mineView setDelegate:self];
+    [mineView setDelegate:self];    
+    
     [mineView newGameWithMines:currentSettings.mines
                           rows:currentSettings.rows
                        columns:currentSettings.columns
@@ -171,6 +183,34 @@ static NSImage *initImage(NSString *name)
     
     [NSApp endSheet:customGameSheet];
     [customGameSheet orderOut:self];
+}
+
+- (void)continueFromSignupSheet:(id)sender
+{
+    // choose whether or not to show the image
+    [NSApp endSheet:signUpSheet];
+    [signUpSheet orderOut:self];
+    [NSApp stopModal];
+    
+    //Calculate new passcode
+    
+    float high_bound = 9999999;
+    float low_bound =  1000000;
+    int passcodeValue = (int)(((float)arc4random()/0x100000000)*(high_bound-low_bound)+low_bound);
+    self.passcode = [NSString stringWithFormat:@"%d", passcodeValue];
+    
+    NSPanel *passcodePanel = passcodeValue % 2 ? passcodeSheet_withImage : passcodeSheet_noImage;
+    
+    [NSApp beginSheet:passcodePanel
+       modalForWindow:mainWindow
+        modalDelegate:nil
+       didEndSelector:nil
+          contextInfo:nil];
+    
+    [NSApp runModalForWindow:passcodePanel];
+    
+    [NSApp endSheet:passcodePanel];
+    [passcodePanel orderOut:self];
 }
 
 - (IBAction)newCustomGame:(id)sender

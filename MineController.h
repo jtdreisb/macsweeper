@@ -39,9 +39,16 @@ static const GameSettings kExpertGame = {16, 30, 99};
     
     // Windows and panels
     IBOutlet NSWindow *mainWindow;
+    IBOutlet NSPanel *signUpSheet;
+    IBOutlet NSPanel *passcodeSheet_noImage;
+    IBOutlet NSPanel *passcodeSheet_withImage;
+    IBOutlet NSPanel *saveInfoSheet;
     IBOutlet NSPanel *customGameSheet;
     IBOutlet NSPanel *newHighScoreSheet;
     IBOutlet NSPanel *highScoresPanel;
+    
+    // Sign Up
+    IBOutlet NSForm *signUpForm;
     
     // Custom game cells
     IBOutlet NSForm *customForm;
@@ -75,6 +82,7 @@ static const GameSettings kExpertGame = {16, 30, 99};
     int customRows;
     int customColumns;
     int customMines;
+    NSString *passcode;
 
     // High Scores
     HighScore beginnerScores[3];
@@ -90,11 +98,15 @@ static const GameSettings kExpertGame = {16, 30, 99};
 @property int customColumns;
 @property int customMines;
 
+@property (retain) NSString *passcode;
+
 - (IBAction)newGame:(id)sender;
 
 - (IBAction)beginnerGame:(id)sender;
 - (IBAction)intermediateGame:(id)sender;
 - (IBAction)expertGame:(id)sender;
+
+- (IBAction)continueFromSignupSheet:(id)sender;
 
 - (IBAction)customGame:(id)sender;
 - (IBAction)newCustomGame:(id)sender;
