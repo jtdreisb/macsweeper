@@ -19,22 +19,22 @@ static NSImage *initImage(NSString *name)
 	
 	NSBundle *iChatBundle = [[NSBundle alloc] initWithPath:[[NSWorkspace sharedWorkspace] absolutePathForAppBundleWithIdentifier:@"com.apple.iChat"]];
 	NSBundle *iChatSmileyBundle = [[NSBundle alloc] initWithPath:[NSString stringWithFormat:@"%@/%@", [iChatBundle builtInPlugInsPath], @"Standard.smileypack"]];
-
+    
 	NSString *imagePath = [iChatSmileyBundle pathForResource:[NSString stringWithFormat:@"%@.tif", name] ofType:nil];
-
+    
 	// Attempt to load the Leopard image location
 	if (imagePath == nil) {
 		imagePath = [iChatBundle pathForResource:[NSString stringWithFormat:@"%@.tif", name] ofType:nil];
 	}
-
+    
 	// Attempt to load the Tiger image location
 	if (imagePath == nil) {
 		imagePath = [iChatBundle pathForResource:[NSString stringWithFormat:@"%@.tiff", name] ofType:nil];
 	}
-
+    
 	[iChatSmileyBundle release];
 	[iChatBundle release];
-
+    
 	NSImage *image = [[NSImage alloc] initWithContentsOfFile:imagePath];
     [image setName:name];
 	return image;
@@ -54,7 +54,7 @@ static NSImage *initImage(NSString *name)
     [mainWindow setFrameUsingName:name];
     
     [NSApp setDelegate:self];
-
+    
     // Set up image names
     // image names are:
     //  "smile" - smile.tif, default image
@@ -63,11 +63,11 @@ static NSImage *initImage(NSString *name)
     //  "yuck"  - yuck.tif, game won image
     // images are borrowed from iChat, thus the names
 	
-    initImage(@"smile");    
+    initImage(@"smile");
     initImage(@"gasp");
     initImage(@"frown");
     initImage(@"yuck");
-
+    
     scoreList[0] = beginnerScores;
     scoreList[1] = intermediateScores;
     scoreList[2] = expertScores;
@@ -77,7 +77,7 @@ static NSImage *initImage(NSString *name)
     
     [self setDefaults];
     [self setToolbar];
-
+    
     [self performSelector:@selector(newGame:) withObject:nil afterDelay:0.1];
 }
 
@@ -89,7 +89,7 @@ static NSImage *initImage(NSString *name)
 - (IBAction)newGame:(id)sender
 {
     
-    [smileyView setImage:[NSImage imageNamed:@"smile"]];   
+    [smileyView setImage:[NSImage imageNamed:@"smile"]];
     int menuState[4] = {NSOffState, NSOffState, NSOffState, NSOffState};
     menuState[currentGameType] = NSOnState;
     
@@ -124,19 +124,21 @@ static NSImage *initImage(NSString *name)
             break;
     }
     
-    [NSApp beginSheet:signUpSheet
-       modalForWindow:mainWindow
-        modalDelegate:nil
-       didEndSelector:nil
-          contextInfo:nil];
-    
-    [NSApp runModalForWindow:signUpSheet];
-    
-    [NSApp endSheet:signUpSheet];
-    [signUpSheet orderOut:self];
+    if (_playerDictionary == nil) {
+        [NSApp beginSheet:signUpSheet
+           modalForWindow:mainWindow
+            modalDelegate:nil
+           didEndSelector:nil
+              contextInfo:nil];
+        
+        [NSApp runModalForWindow:signUpSheet];
+        
+        [NSApp endSheet:signUpSheet];
+        [signUpSheet orderOut:self];
+    }
     
     [mineView setTimerField:timerField andMinesLeftField:minesLeftField];
-    [mineView setDelegate:self];    
+    [mineView setDelegate:self];
     
     [mineView newGameWithMines:currentSettings.mines
                           rows:currentSettings.rows
@@ -145,7 +147,7 @@ static NSImage *initImage(NSString *name)
 }
 
 - (IBAction)beginnerGame:(id)sender
-{    
+{
     currentGameType = kBeginner;
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -176,12 +178,12 @@ static NSImage *initImage(NSString *name)
 
 - (IBAction)customGame:(id)sender
 {
-    [NSApp beginSheet:customGameSheet 
-       modalForWindow:mainWindow 
+    [NSApp beginSheet:customGameSheet
+       modalForWindow:mainWindow
         modalDelegate:nil
        didEndSelector:nil
           contextInfo:nil];
-     
+    
     [NSApp runModalForWindow:customGameSheet];
     
     [NSApp endSheet:customGameSheet];
@@ -197,8 +199,8 @@ static NSImage *initImage(NSString *name)
     
     //Calculate new passcode
     
-    float high_bound = 9999999;
-    float low_bound =  1000000;
+    float high_bound = 9999;
+    float low_bound =  1000;
     int passcodeValue = (int)(((float)arc4random()/0x100000000)*(high_bound-low_bound)+low_bound);
     self.passcode = [NSString stringWithFormat:@"%d", passcodeValue];
     
@@ -218,24 +220,18 @@ static NSImage *initImage(NSString *name)
 
 - (IBAction)playGame:(id)sender
 {
-    NSMutableDictionary *playerDatabase = [[NSMutableDictionary alloc] initWithContentsOfFile:kUserDatabaseFilePath];
-    if (playerDatabase == nil)
-        playerDatabase = [NSMutableDictionary dictionary];
-    
     NSFormCell *nameCell = [signUpForm cellAtIndex:0];
     NSFormCell *ageCell = [signUpForm cellAtIndex:1];
     NSLog(@"%d", [self.passcode intValue]);
     
+    _playerDictionary = [@{
+                         @"name": [nameCell stringValue],
+                         @"age": [ageCell stringValue],
+                         @"passcode": self.passcode,
+                         @"hadImage": [self.passcode intValue] % 2 ? @YES : @NO,
+                         @"startTime": [NSDate date]
+                         } mutableCopy];
     
-    NSDictionary *playerDictionary = @{
-                                       @"name": [nameCell stringValue],
-                                       @"age": [ageCell stringValue],
-                                       @"passcode": self.passcode,
-                                       @"hadImage": @([self.passcode intValue] % 2),
-                                       @"startTime": [NSDate date]
-                                       };
-    [playerDatabase setObject:playerDictionary forKey:playerDictionary[@"name"]];
-    [playerDatabase writeToFile:kUserDatabaseFilePath atomically:YES];
     
     [NSApp stopModal];
 }
@@ -243,7 +239,7 @@ static NSImage *initImage(NSString *name)
 - (IBAction)newCustomGame:(id)sender
 {
     [NSApp stopModal];
-
+    
     NSFormCell *customRowsCell = [customForm cellAtIndex:0];
     NSFormCell *customColumnsCell = [customForm cellAtIndex:1];
     NSFormCell *customMinesCell = [customForm cellAtIndex:2];
@@ -268,8 +264,57 @@ static NSImage *initImage(NSString *name)
     [NSApp stopModal];
 }
 
+- (IBAction)continueFromPasscodeEntry_noImage:(id)sender
+{
+     NSFormCell *passcodeCell = [passcodeForm_noImage cellAtIndex:0];
+    _playerDictionary[@"rememberedCode"] = [[passcodeCell stringValue] isEqualToString:self.passcode] ? @YES : @NO;
+    passcodeCell.stringValue = @"";
+    [NSApp stopModal];
+}
+
+- (IBAction)continueFromPasscodeEntry_withImage:(id)sender
+{
+    NSFormCell *passcodeCell = [passcodeForm_withImage cellAtIndex:0];
+    _playerDictionary[@"rememberedCode"] = [[passcodeCell stringValue] isEqualToString:self.passcode] ? @YES : @NO;
+    passcodeCell.stringValue = @"";
+    [NSApp stopModal];
+}
+
 - (void)endGameWithTime:(int)seconds win:(BOOL)win
 {
+    
+    if (_playerDictionary != nil) {
+        NSPanel *passcodePanel = [_playerDictionary[@"hadImage"] boolValue] ? passcodeEntrySheet_withImage : passcodeEntrySheet_noImage;
+        for (int i = 0; i < 3; i++) {
+            [NSApp beginSheet:passcodePanel
+               modalForWindow:mainWindow
+                modalDelegate:nil
+               didEndSelector:nil
+                  contextInfo:nil];
+            
+            [NSApp runModalForWindow:passcodePanel];
+            
+            [NSApp endSheet:passcodePanel];
+            [passcodePanel orderOut:self];
+
+            if ([_playerDictionary[@"rememberedCode"] boolValue]) {
+                NSLog(@"Player entered correct code");
+                break;
+            }
+        }
+        
+        NSMutableDictionary *playerDatabase = [[NSMutableDictionary alloc] initWithContentsOfFile:kUserDatabaseFilePath];
+        if (playerDatabase == nil)
+            playerDatabase = [NSMutableDictionary dictionary];
+        
+        _playerDictionary[@"elapsedTime"] = @(seconds);
+        _playerDictionary[@"didWin"] = @(win);
+        
+        [playerDatabase setObject:_playerDictionary forKey:_playerDictionary[@"name"]];
+        [playerDatabase writeToFile:kUserDatabaseFilePath atomically:YES];
+        _playerDictionary = nil;
+    }
+    
     if (win)
         [smileyView setImage:[NSImage imageNamed:@"yuck"]];
     else
@@ -291,7 +336,7 @@ static NSImage *initImage(NSString *name)
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults setBool:self.questions forKey:@"Questions"];
-
+    
     [self newGame:nil];
 }
 
@@ -313,16 +358,16 @@ static NSImage *initImage(NSString *name)
     if (![defaults objectForKey:@"HighScoreNames"] || ![defaults objectForKey:@"HighScoreScores"])
     {
         NSArray *highScoreNames = [NSArray arrayWithObjects:
-            @"", @"", @"", 
-            @"", @"", @"",
-            @"", @"", @"",
-            nil];
+                                   @"", @"", @"",
+                                   @"", @"", @"",
+                                   @"", @"", @"",
+                                   nil];
         
         NSArray *highScoreScores = [NSArray arrayWithObjects:
-            [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], 
-            [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0],
-            [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0],
-            nil];
+                                    [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0],
+                                    [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0],
+                                    [NSNumber numberWithInt:0], [NSNumber numberWithInt:0], [NSNumber numberWithInt:0],
+                                    nil];
         
         [defaults setObject:highScoreNames forKey:@"HighScoreNames"];
         [defaults setObject:highScoreScores forKey:@"HighScoreScores"];
@@ -352,7 +397,7 @@ static NSImage *initImage(NSString *name)
     [customRowsCell setObjectValue:[NSNumber numberWithInt:self.customRows]];
     [customColumnsCell setObjectValue:[NSNumber numberWithInt:self.customColumns]];
     [customMinesCell setObjectValue:[NSNumber numberWithInt:self.customMines]];
- 
+    
     // Set default high scores
     NSArray *highScoreNames = [defaults objectForKey:@"HighScoreNames"];
     NSArray *highScoreScores = [defaults objectForKey:@"HighScoreScores"];
@@ -366,7 +411,7 @@ static NSImage *initImage(NSString *name)
             scores[tag].name = [highScoreNames objectAtIndex:(difficulty * 3 + tag)];
             scores[tag].score = [[highScoreScores objectAtIndex:(difficulty * 3 + tag)] intValue];;
         }
-    }  
+    }
 }
 
 - (void)setHighScores
@@ -388,10 +433,10 @@ static NSImage *initImage(NSString *name)
             [highScoreNames replaceObjectAtIndex:(difficulty * 3 + tag) withObject:scores[tag].name];
             [highScoreScores replaceObjectAtIndex:(difficulty * 3 + tag) withObject:[NSNumber numberWithInt:scores[tag].score]];
         }
-    } 
+    }
     
     [defaults setObject:highScoreNames forKey:@"HighScoreNames"];
-    [defaults setObject:highScoreScores forKey:@"HighScoreScores"];    
+    [defaults setObject:highScoreScores forKey:@"HighScoreScores"];
     
     for (int difficulty = 0; difficulty < 3; ++difficulty)
     {
@@ -432,11 +477,11 @@ static NSImage *initImage(NSString *name)
 {
     // Settings for larger, square text (good fit, but not as pretty)
     /*
-    NSControlSize size = NSSmallControlSize;
-    int height = 19;
-    int width = 38;
-    NSTextFieldBezelStyle style = NSTextFieldSquareBezel;
-    */
+     NSControlSize size = NSSmallControlSize;
+     int height = 19;
+     int width = 38;
+     NSTextFieldBezelStyle style = NSTextFieldSquareBezel;
+     */
     // Settings for smaller, rounded text (pretty, but too small)
     
     NSControlSize size = NSMiniControlSize;
@@ -508,7 +553,7 @@ static NSImage *initImage(NSString *name)
         
         [item setMinSize:NSMakeSize(smileySize, smileySize)];
         [item setMaxSize:NSMakeSize(smileySize, smileySize)];
-
+        
         [item setLabel:@""];
         [item setPaletteLabel:@"Status Display"];
         [item setTarget:self];
@@ -520,17 +565,17 @@ static NSImage *initImage(NSString *name)
 
 - (NSArray *)toolbarAllowedItemIdentifiers:(NSToolbar *)toolbar
 {
-    return [NSArray arrayWithObjects:@"MinesLeftItem",  
-                                     @"SmileyItem",
-                                     @"TimerItem",
-                                     NSToolbarFlexibleSpaceItemIdentifier, nil];
+    return [NSArray arrayWithObjects:@"MinesLeftItem",
+            @"SmileyItem",
+            @"TimerItem",
+            NSToolbarFlexibleSpaceItemIdentifier, nil];
 }
 
 - (NSArray *)toolbarDefaultItemIdentifiers:(NSToolbar *)toolbar
 {
     return [NSArray arrayWithObjects:@"MinesLeftItem", NSToolbarFlexibleSpaceItemIdentifier,
-                                     @"SmileyItem", NSToolbarFlexibleSpaceItemIdentifier,
-                                     @"TimerItem", nil];
+            @"SmileyItem", NSToolbarFlexibleSpaceItemIdentifier,
+            @"TimerItem", nil];
 }
 
 - (void)newHighScoreWithDifficulty:(GameType)game andTime:(int)timeToComplete
@@ -544,8 +589,8 @@ static NSImage *initImage(NSString *name)
     [[newHighScoreForm cellAtIndex:0] setStringValue:gameTypeString];
     [[newHighScoreForm cellAtIndex:1] setIntValue:timeToComplete];
     
-    [NSApp beginSheet:newHighScoreSheet 
-       modalForWindow:mainWindow 
+    [NSApp beginSheet:newHighScoreSheet
+       modalForWindow:mainWindow
         modalDelegate:nil
        didEndSelector:nil
           contextInfo:nil];

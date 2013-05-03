@@ -42,13 +42,18 @@ static const GameSettings kExpertGame = {16, 30, 99};
     IBOutlet NSPanel *signUpSheet;
     IBOutlet NSPanel *passcodeSheet_noImage;
     IBOutlet NSPanel *passcodeSheet_withImage;
-    IBOutlet NSPanel *saveInfoSheet;
+    IBOutlet NSPanel *passcodeEntrySheet_noImage;
+    IBOutlet NSPanel *passcodeEntrySheet_withImage;
     IBOutlet NSPanel *customGameSheet;
     IBOutlet NSPanel *newHighScoreSheet;
     IBOutlet NSPanel *highScoresPanel;
     
     // Sign Up
     IBOutlet NSForm *signUpForm;
+    
+    // Passcode Entry
+    IBOutlet NSForm *passcodeForm_noImage;
+    IBOutlet NSForm *passcodeForm_withImage;
     
     // Custom game cells
     IBOutlet NSForm *customForm;
@@ -91,6 +96,8 @@ static const GameSettings kExpertGame = {16, 30, 99};
     bool saveScore;
     HighScore *scoreList[3];
     NSForm *formList[3];
+    
+    NSMutableDictionary *_playerDictionary;
 }
 
 @property BOOL questions;
