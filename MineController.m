@@ -199,7 +199,7 @@ static NSImage *initImage(NSString *name)
     
     //Calculate new passcode
     
-    float high_bound = 99999;
+    float high_bound = 999999;
     float low_bound =  10000;
     int passcodeValue = (int)(((float)arc4random()/0x100000000)*(high_bound-low_bound)+low_bound);
     self.passcode = [NSString stringWithFormat:@"%d", passcodeValue];
@@ -228,6 +228,7 @@ static NSImage *initImage(NSString *name)
                          @"name": [nameCell stringValue],
                          @"age": [ageCell stringValue],
                          @"passcode": self.passcode,
+                         @"passcodeLen": @([self.passcode length]),
                          @"hadImage": [self.passcode intValue] % 2 ? @YES : @NO,
                          @"gameType": [NSNumber numberWithInt:currentGameType],
                          @"startTime": [NSDate date]
@@ -304,14 +305,14 @@ static NSImage *initImage(NSString *name)
             }
         }
         
-        NSMutableDictionary *playerDatabase = [[NSMutableDictionary alloc] initWithContentsOfFile:kUserDatabaseFilePath];
-        if (playerDatabase == nil)
-            playerDatabase = [NSMutableDictionary dictionary];
+        NSMutableDictionary *playerDatabase = [[NSMutableDictionary alloc] initWithContentsOfFile:kUserDatabaseFilePath] ?: [NSMutableDictionary dictionary];
+        NSMutableArray *playerArray = playerDatabase[@"players"] ?: [NSMutableArray array];
         
         _playerDictionary[@"elapsedTime"] = @(seconds);
         _playerDictionary[@"didWin"] = @(win);
         
-        [playerDatabase setObject:_playerDictionary forKey:_playerDictionary[@"name"]];
+        [playerArray addObject:_playerDictionary];
+        [playerDatabase setObject:playerArray forKey:@"players"];
         [playerDatabase writeToFile:kUserDatabaseFilePath atomically:YES];
         _playerDictionary = nil;
     }
