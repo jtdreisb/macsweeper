@@ -199,8 +199,8 @@ static NSImage *initImage(NSString *name)
     
     //Calculate new passcode
     
-    float high_bound = 9999;
-    float low_bound =  1000;
+    float high_bound = 99999;
+    float low_bound =  10000;
     int passcodeValue = (int)(((float)arc4random()/0x100000000)*(high_bound-low_bound)+low_bound);
     self.passcode = [NSString stringWithFormat:@"%d", passcodeValue];
     
@@ -229,6 +229,7 @@ static NSImage *initImage(NSString *name)
                          @"age": [ageCell stringValue],
                          @"passcode": self.passcode,
                          @"hadImage": [self.passcode intValue] % 2 ? @YES : @NO,
+                         @"gameType": [NSNumber numberWithInt:currentGameType],
                          @"startTime": [NSDate date]
                          } mutableCopy];
     
